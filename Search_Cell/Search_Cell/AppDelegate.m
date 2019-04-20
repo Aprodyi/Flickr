@@ -7,8 +7,9 @@
 //
 
 #import "AppDelegate.h"
+@import UserNotifications;
 
-@interface AppDelegate ()
+@interface AppDelegate () <UNUserNotificationCenterDelegate>
 
 @end
 
@@ -25,9 +26,27 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+    UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+    
+    // Устанавливаем делегат
+    center.delegate = self;
+    
+    // Указываем тип пушей для работы
+    UNAuthorizationOptions options = UNAuthorizationOptionSound | UNAuthorizationOptionAlert | UNAuthorizationOptionBadge;
+    
+    // Запрашиваем доступ на работу с пушами
+    [center requestAuthorizationWithOptions:options
+                          completionHandler:^(BOOL granted, NSError * _Nullable error) {
+                              if (!granted)
+                              {
+                                  NSLog(@"Доступ не дали");
+                              }
+                          }];
+    
     [self appearance];
     
     CollectionViewController *collectionViewController = [[CollectionViewController alloc] init];
+    [collectionViewController sheduleLocalNotification];
     UINavigationController *navigationViewController = [[UINavigationController alloc]initWithRootViewController: collectionViewController];
     
     self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen]bounds]];
@@ -64,5 +83,38 @@
     // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
 }
 
+#pragma mark - UNUserNotificationCenterDelegate
+
+- (void)userNotificationCenter:(UNUserNotificationCenter *)center
+       willPresentNotification:(UNNotification *)notification
+         withCompletionHandler:(void (^)(UNNotificationPresentationOptions options))completionHandler
+{
+    if (completionHandler)
+    {
+        completionHandler(UNAuthorizationOptionSound | UNAuthorizationOptionAlert | UNAuthorizationOptionBadge);
+    }
+}
+
+- (void)userNotificationCenter:(UNUserNotificationCenter *)center didReceiveNotificationResponse:(UNNotificationResponse *)response withCompletionHandler:(void(^)(void))completionHandler
+{
+    UNNotificationContent *content = response.notification.request.content;
+    
+    if (content.userInfo[@"search"])
+    {
+        NSString *search = content.userInfo[@"search"];
+        CollectionViewController *CVC = [[CollectionViewController alloc] initWithSeachString:search];
+        [CVC searchPushNotification];
+        UINavigationController *navigationViewController = [[UINavigationController alloc]initWithRootViewController: CVC];
+        
+        self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen]bounds]];
+        self.window.rootViewController = navigationViewController;
+        [self.window makeKeyAndVisible];
+    }
+    
+    if (completionHandler)
+    {
+        completionHandler();
+    }
+}
 
 @end

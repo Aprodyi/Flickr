@@ -37,7 +37,7 @@
         NSLog(@"Page - %@", [photoDictionary valueForKeyPath:@"photos.page"]);
         NSUInteger pagesCount = [[photoDictionary valueForKeyPath:@"photos.pages"] intValue];
         self.photoData = [NSMutableArray new];
-        for (int i=0; i<10; i++)
+        for (int i=0; i<5; i++)
         {
             NSString *str = [NSString stringWithFormat:@"https://farm%@.staticflickr.com/%@/%@_%@.jpg", [photoDictionary valueForKeyPath:@"photos.photo.farm"][i], [photoDictionary valueForKeyPath:@"photos.photo.server"][i], [photoDictionary valueForKeyPath:@"photos.photo.id"][i], [photoDictionary valueForKeyPath:@"photos.photo.secret"][i]];
             NSURL *url = [NSURL URLWithString:str];

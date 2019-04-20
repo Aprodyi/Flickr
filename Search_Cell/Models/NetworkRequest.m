@@ -14,7 +14,7 @@
 {
     NSString *APIKey = @"478a1c5c1b45280df28edf1f08100976";
     
-    return [NSString stringWithFormat:@"https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=%@&tags=%@&per_page=10&page=%lu&format=json&nojsoncallback=1", APIKey, searchString, currentpage];
+    return [NSString stringWithFormat:@"https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=%@&tags=%@&per_page=5&page=%lu&format=json&nojsoncallback=1", APIKey, searchString, currentpage];
 }
 
 @end

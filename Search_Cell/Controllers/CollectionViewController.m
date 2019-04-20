@@ -11,6 +11,7 @@
 #import "FilterViewController.h"
 #import "FullScreenImage.h"
 #import "ImageCollectionViewCell.h"
+@import UserNotifications;
 
 @interface CollectionViewController () <UICollectionViewDataSource, UICollectionViewDelegate, NetworkServiceOutputProtocol>
 
@@ -22,6 +23,7 @@
 @property (assign, nonatomic) NSUInteger totalPagesAmount;
 @property (strong, nonatomic) UITextField *textField;
 @property (strong, nonatomic) UIImage *enlargeImage;
+@property (strong, nonatomic) NSString *searchString;
 
 @end
 
@@ -29,10 +31,18 @@
 
 static NSString *cellIdentifier = @"cellIdentifier";
 
+-(instancetype) initWithSeachString: (NSString *) searchString
+{
+    if (self = [super init])
+    {
+        _searchString = searchString;
+    }
+    return self;
+}
+
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-
     self.photoDataArray = [NSMutableArray new];
     self.parcingRequest = [ParcingRequest new];
     self.parcingRequest.output = self;
@@ -87,7 +97,7 @@ static NSString *cellIdentifier = @"cellIdentifier";
         {
             self.numberOfPage++;
         }
-        [self.parcingRequest findFlickrPhotoWithSearchString: self.textField.text currentPage: self.numberOfPage];
+        [self.parcingRequest findFlickrPhotoWithSearchString: self.searchString currentPage: self.numberOfPage];
     }
 }
 
@@ -133,14 +143,14 @@ static NSString *cellIdentifier = @"cellIdentifier";
     UIAlertAction* search = [UIAlertAction actionWithTitle:@"Поиск" style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
         
         self.textField = alertController.textFields.firstObject;
-        
         if (self.textField.text.length > 0)
         {
             [self.view endEditing:YES];
             [self.photoDataArray removeAllObjects];
             [self.collectionView reloadData];
             self.numberOfPage = 1;
-            [self.parcingRequest findFlickrPhotoWithSearchString: self.textField.text currentPage: self.numberOfPage];
+            self.searchString = self.textField.text;
+            [self.parcingRequest findFlickrPhotoWithSearchString: self.searchString currentPage: self.numberOfPage];
         }
     }];
     
@@ -152,6 +162,46 @@ static NSString *cellIdentifier = @"cellIdentifier";
     [alertController addAction:cancel];
     
     [self presentViewController:alertController animated:YES completion:nil];
+}
+
+#pragma mark - LocalNotifications
+
+- (void)sheduleLocalNotification
+{
+    UNMutableNotificationContent *content = [UNMutableNotificationContent new];
+    content.title = @"Вы давно не искали собак";
+    content.body = @"Нажмите, чтобы запустить поиск";
+    content.sound = [UNNotificationSound defaultSound];
+    
+    NSDictionary *dict = @{ @"search": @"dogs" };
+    content.userInfo = dict;
+    
+    UNNotificationRequest *request = [UNNotificationRequest requestWithIdentifier:@"NotificationId" content:content trigger: [self intervalTrigger]];
+    
+    UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+    [center addNotificationRequest:request withCompletionHandler:^(NSError * _Nullable error)
+     {
+         if (error)
+         {
+             NSLog(@"Something Wrong!!! - %@",error);
+         }
+     }];
+}
+
+#pragma mark - Notifications
+
+- (UNTimeIntervalNotificationTrigger *)intervalTrigger
+{
+    return [UNTimeIntervalNotificationTrigger triggerWithTimeInterval:10 repeats:NO];
+}
+
+- (void)searchPushNotification
+{
+    self.photoDataArray = [NSMutableArray new];
+    self.parcingRequest = [ParcingRequest new];
+    self.parcingRequest.output = self;
+    self.numberOfPage = 1;
+    [self.parcingRequest findFlickrPhotoWithSearchString: self.searchString currentPage: self.numberOfPage];
 }
 
 @end
